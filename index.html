@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIMONIF - Sistem Monitoring Ibu Nifas</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <style>
+        :root {
+            --bg-light-pink: #fdf2f4; 
+            --text-maroon: #6e4753;    
+            --text-muted: #8e717a;     
+            --button-pink: #cc96a2;    
+            --button-hover: #b88390;
+            --primary-color: #008f95;  
+            --dark-color: #1e293b;
+            --light-color: #ffffff;
+            --danger-color: #ef4444;
+            --border-radius-lg: 20px;   
+            --border-radius-sm: 8px;
+            --shadow: 0 10px 25px -5px rgba(110, 71, 83, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+        body { background-color: var(--bg-light-pink); color: var(--text-maroon); display: flex; flex-direction: column; min-height: 100vh; }
+        nav { background: transparent; padding: 30px 60px; display: flex; justify-content: space-between; align-items: center; }
+        nav .logo { font-size: 24px; font-weight: 700; color: var(--text-maroon); letter-spacing: 0.5px; }
+        nav .nav-links { display: flex; align-items: center; gap: 30px; }
+        nav .nav-links a { color: var(--text-muted); text-decoration: none; font-weight: 500; font-size: 14px; cursor: pointer; transition: color 0.2s; }
+        nav .nav-links a:hover, nav .nav-links a.active { color: var(--text-maroon); font-weight: 600; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 40px; flex: 1; display: flex; flex-direction: column; width: 100%; }
+        .view-section { display: none; animation: fadeIn 0.5s ease-in-out forwards; flex: 1; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* HERO SPLIT & ANIMATION SLIDESHOW */
+        .hero-split { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 60px; align-items: center; padding: 60px 0 80px 0; height: 100%; }
+        .hero-left { display: flex; flex-direction: column; align-items: flex-start; }
+        .hero-badge { background-color: rgba(204, 150, 162, 0.15); color: var(--text-maroon); padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-bottom: 20px; border: 1px solid rgba(204, 150, 162, 0.3); letter-spacing: 0.5px; }
+        .hero-left h1 { font-size: 48px; font-weight: 800; color: var(--text-maroon); line-height: 1.2; margin-bottom: 25px; letter-spacing: -0.5px; }
+        .hero-left p { font-size: 16.5px; color: var(--text-muted); line-height: 1.7; margin-bottom: 35px; max-width: 520px; text-align: justify; }
+        .btn-start { background-color: var(--button-pink); color: white; padding: 15px 38px; border: none; border-radius: 30px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 8px 20px rgba(204, 150, 162, 0.4); letter-spacing: 0.5px; }
+        .btn-start:hover { background-color: var(--button-hover); transform: translateY(-3px); box-shadow: 0 12px 25px rgba(204, 150, 162, 0.5); }
+        .hero-right { display: flex; justify-content: center; }
+
+        @keyframes dynamicSlideshow {
+            0%, 28% { background-image: url('https://i.imgur.com/t0kdpin.png'); }
+            33%, 61% { background-image: url('https://i.imgur.com/2ojD6wF.png'); }
+            66%, 95% { background-image: url('https://i.imgur.com/ytqksK6.png'); }
+            100% { background-image: url('https://i.imgur.com/t0kdpin.png'); }
+        }
+        @keyframes floatingEffect { 0% { transform: translateY(0px); } 50% { transform: translateY(-10px); } 100% { transform: translateY(0px); } }
+        .image-frame { width: 100%; max-width: 480px; height: 320px; border-radius: var(--border-radius-lg); box-shadow: 0 20px 40px rgba(110, 71, 83, 0.15); border: 5px solid white; background-size: cover; background-position: center; background-repeat: no-repeat; animation: dynamicSlideshow 12s infinite, floatingEffect 6s ease-in-out infinite; transition: background-image 0.8s ease-in-out; }
+
+        /* ABOUT TIM FORMASI */
+        .about-header { text-align: center; padding: 40px 0 20px 0; }
+        .about-header h1 { font-size: 42px; font-weight: 700; color: var(--text-maroon); margin-bottom: 30px; }
+        .about-text-block { max-width: 850px; margin: 0 auto 50px auto; text-align: justify; line-height: 1.8; font-size: 15.5px; }
+        .about-text-block p { margin-bottom: 20px; }
+        .team-section-title { text-align: center; font-size: 22px; font-weight: 700; color: var(--text-maroon); margin-bottom: 35px; letter-spacing: 0.5px; }
+        .team-card { background: rgba(255, 255, 255, 0.6); border: 1px solid rgba(204, 150, 162, 0.2); border-radius: var(--border-radius-lg); padding: 25px 20px; text-align: center; box-shadow: 0 4px 15px rgba(110, 71, 83, 0.04); transition: transform 0.3s, background-color 0.3s; }
+        .team-card:hover { transform: translateY(-5px); background: #ffffff; box-shadow: var(--shadow); }
+        .avatar-frame { width: 110px; height: 110px; border-radius: 50%; margin: 0 auto 18px auto; border: 3px solid var(--button-pink); padding: 4px; background: white; overflow: hidden; }
+        .avatar-frame img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; background: #f1f5f9; }
+        .team-card .member-name { font-size: 15px; font-weight: 700; color: var(--text-maroon); margin-bottom: 6px; line-height: 1.3; }
+        .team-card .member-role { font-size: 12px; font-weight: 600; color: white; background-color: var(--button-pink); padding: 3px 12px; border-radius: 15px; display: inline-block; letter-spacing: 0.5px; }
+
+        /* LMS WORKSPACE LAYOUT */
+        .lms-layout { display: grid; grid-template-columns: 320px 1fr; gap: 25px; padding: 20px 0; }
+        .sidebar { background: white; padding: 20px; border-radius: var(--border-radius-sm); box-shadow: var(--shadow); height: fit-content; }
+        .sidebar-item { padding: 14px 16px; border-radius: 8px; margin-bottom: 10px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: space-between; background: #fdfbfb; border: 1px solid #f3ebeb; transition: all 0.2s; color: var(--text-maroon); }
+        .sidebar-item.active { background: var(--button-pink); color: white; font-weight: 600; border-color: var(--button-pink); }
+        .sidebar-item.locked { opacity: 0.5; cursor: not-allowed; background: #e2e8f0; }
+        .main-content-card { background: white; padding: 30px; border-radius: var(--border-radius-sm); box-shadow: var(--shadow); margin-bottom: 25px; }
+        .preview-container { width: 100%; height: 480px; border-radius: 6px; overflow: hidden; background: #e2e8f0; margin: 20px 0; border: 1px solid #cbd5e1; }
+        .preview-container iframe, .preview-container video { width: 100%; height: 100%; border: none; }
+        .timer-alert { background: #fef3c7; border: 1px solid #fde68a; color: #92400e; padding: 15px; border-radius: 6px; margin-bottom: 20px; font-weight: 500; }
+        .timer-alert.unlocked { background: #d1fae5; border-color: #a7f3d0; color: #065f46; }
+        #time-left { font-family: monospace; background: #1e293b; color: #f59e0b; padding: 2px 8px; border-radius: 4px; font-size: 16px; }
+
+        /* FORM CONTROL & TABLES */
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size: 14px; }
+        .form-control { width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; }
+        .btn { padding: 10px 22px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 14px; transition: all 0.2s; display: inline-block; }
+        .btn-primary { background: var(--button-pink); color: white; }
+        .btn-primary:hover { background: var(--button-hover); }
+        .btn-tosca { background: var(--button-pink); color: white; }
+        .btn-tosca:hover { background: var(--button-hover); }
+        .btn-locked { background: #cbd5e1; color: #94a3b8; cursor: not-allowed; }
+        .btn-danger { background: var(--danger-color); color: white; }
+        .quiz-option { display: block; padding: 12px; border: 1px solid #ddd; border-radius: 6px; margin-bottom: 10px; cursor: pointer; }
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 14px; }
+        .admin-table th, .admin-table td { border: 1px solid #cbd5e1; padding: 10px; text-align: left; }
+        .admin-table th { background-color: #f1f5f9; }
+
+        footer { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 13px; border-top: 1px solid rgba(110, 71, 83, 0.1); margin-top: auto; width: 100%; }
+        .admin-trigger { background: none; border: none; color: var(--text-muted); cursor: pointer; text-decoration: underline; }
+
+        @media (max-width: 992px) {
+            .hero-split { grid-template-columns: 1fr; text-align: center; padding: 20px 0; }
+            .hero-left { align-items: center; }
+            .lms-layout { grid-template-columns: 1fr; }
+            nav { padding: 20px; flex-direction: column; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">SIMONIF</div>
+        <div class="nav-links">
+            <a id="menu-landing" class="active" onclick="showView('landing')">Beranda</a>
+            <a id="menu-about" onclick="showView('about')">Tentang</a>
+            <a onclick="alert('Hubungi tim pusat SIMONIF melalui email: admin@simonif.id')">Kontak</a>
+            <button class="btn" style="background:#e2e8f0; display:none; padding: 4px 10px; font-size:12px;" id="logout-admin-btn" onclick="logoutAdmin()">Keluar Admin</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="view-landing" class="view-section active">
+            <div class="hero-split">
+                <div class="hero-left">
+                    <span class="hero-badge">✨ SIMONIF</span>
+                    <h1>Sistem Monitoring Ibu Nifas [SIMONIF]</h1>
+                    <p>SIMONIF adalah sistem informasi untuk memantau kondisi kesehatan ibu nifas secara berkelanjutan, mendukung tenaga kesehatan dalam pencatatan, pemantauan, dan pengambilan keputusan berbasis data.</p>
+                    <button class="btn-start" onclick="showView('user-lms')">Mulai Sekarang</button>
+                </div>
+                <div class="hero-right"><div class="image-frame"></div></div>
+            </div>
+        </div>
+
+        <div id="view-about" class="view-section">
+            <div class="about-header"><h1>Tentang SIMONIF</h1></div>
+            <div class="about-text-block">
+                <p><b>SIMONIF (Sistem Monitoring Ibu Nifas)</b> merupakan sistem informasi berbasis web yang dikembangkan untuk mendukung pemantauan kesehatan ibu nifas secara berkelanjutan, terstruktur, dan terintegrasi.</p>
+                <p>SIMONIF membantu bidan dan tenaga kesehatan dalam pencatatan asuhan nifas, pemantauan kondisi klinis, serta deteksi dini risiko komplikasi, sehingga pelayanan kesehatan ibu dapat diberikan secara optimal dan berkesinambungan.</p>
+            </div>
+            <h3 class="team-section-title">✨ Tim Pengembang & Penilai</h3>
+            <div style="display: flex; flex-direction: column; gap: 40px; max-width: 1000px; margin: 0 auto 60px auto;">
+                <div style="display: flex; justify-content: center;">
+                    <div class="team-card" style="width: 240px;">
+                        <div class="avatar-frame"><img src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=200&auto=format&fit=crop" alt="Pembimbing"></div>
+                        <div class="member-name">Nama Pembimbing, M.Keb</div><span class="member-role">Pembimbing</span>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+                    <div class="team-card" style="width: 240px;">
+                        <div class="avatar-frame"><img src="https://images.unsplash.com/photo-1580489944761-15a19d654956?q=80&w=200&auto=format&fit=crop" alt="Penguji 1"></div>
+                        <div class="member-name">Nama Penguji 1, M.Pd</div><span class="member-role">Penguji 1</span>
+                    </div>
+                    <div class="team-card" style="width: 240px;">
+                        <div class="avatar-frame"><img src="https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200&auto=format&fit=crop" alt="Penguji 2"></div>
+                        <div class="member-name">Nama Penguji 2, S.ST</div><span class="member-role">Penguji 2</span>
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <div class="team-card" style="width: 240px;">
+                        <div class="avatar-frame"><img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?q=80&w=200&auto=format&fit=crop" alt="Mahasiswa"></div>
+                        <div class="member-name">Nama Anda / Mahasiswa</div><span class="member-role">Mahasiswa</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-user-lms" class="view-section">
+            <div class="lms-layout">
+                <div class="sidebar">
+                    <h4 style="margin-bottom: 15px; color: var(--text-maroon);">Daftar Menu</h4>
+                    <div id="user-sidebar-list"></div>
+                </div>
+                <div class="main-content-card" id="user-main-content"></div>
+            </div>
+        </div>
+
+        <div id="view-admin" class="view-section">
+            <div class="main-content-card">
+                <h3 style="margin-bottom: 20px; color: var(--text-maroon);">Manajemen Modul & Urutan Materi</h3>
+                <form onsubmit="adminSaveData(event)" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+                    <div class="form-group"><label>Judul Modul</label><input type="text" id="adm-title" class="form-control" required></div>
+                    <div class="form-group"><label>Jenis Konten</label><select id="adm-type" class="form-control"><option value="pdf">File Dokumen PDF</option><option value="video">Video (Google Drive Embed)</option></select></div>
+                    <div class="form-group"><label>Link Embed URL</label><input type="url" id="adm-url" class="form-control" required></div>
+                    <div class="form-group"><label>Lock Timer (Menit)</label><input type="number" id="adm-duration" class="form-control" value="0.2" min="0.1" step="0.1"></div>
+                    <div class="form-group"><button type="submit" class="btn btn-primary" style="width: 100%;">Tambah Materi</button></div>
+                </form>
+                <table class="admin-table">
+                    <thead><tr><th>No</th><th>Judul Modul</th><th>Jenis</th><th>Durasi</th><th>Aksi</th></tr></thead>
+                    <tbody id="adm-list-preview"></tbody>
+                </table>
+            </div>
+            <div class="main-content-card">
+                <h3 style="color: var(--text-maroon); margin-bottom: 15px;">Pengaturan Kuesioner (Pilihan Ganda + Kunci)</h3>
+                <form onsubmit="adminSaveQuestion(event)" style="display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; align-items: end; margin-bottom: 15px;">
+                    <div class="form-group"><label>Pertanyaan Kuis</label><input type="text" id="adm-q-text" class="form-control" required></div>
+                    <div class="form-group"><label>Pilihan (Pisahkan koma)</label><input type="text" id="adm-q-opts" class="form-control" required></div>
+                    <div class="form-group"><label>Kunci Jawaban</label><input type="text" id="adm-q-key" class="form-control" required></div>
+                    <div class="form-group"><button type="submit" class="btn btn-primary">Tambah Soal</button></div>
+                </form>
+                <div id="adm-questions-preview"></div>
+            </div>
+            <div class="main-content-card">
+                <h3 style="color: var(--text-maroon); margin-bottom: 10px;">📊 Hasil Rekapitulasi Karakteristik & Koreksi Jawaban User</h3>
+                <div style="overflow-x: auto;">
+                    <table class="admin-table">
+                        <thead><tr><th>No</th><th>Nama Responden</th><th>Usia</th><th>Paritas</th><th>Tgl Melahirkan</th><th>Nifas Hari Ke</th><th>Hasil Jawaban & Koreksi Kunci</th><th>Aksi</th></tr></thead>
+                        <tbody id="adm-recap-table-body"><tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Belum ada data.</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div> 
+
+    <footer>
+        <p>© 2026 SIMONIF. All Rights Reserved.</p>
+        <p style="margin-top: 15px;">Akses Manajemen: <button class="admin-trigger" onclick="promptAdminAccess()">Login Superadmin</button></p>
+    </footer>
+
+    <script>
+        // =========================================================================
+        // PENTING: ISI CONFIG FIREBASE ASLI MILIK ANDA DI BAWAH INI!
+        // =========================================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAYGqd0juJWxF25QgaZO7M7jxeHWuqloMQ",
+            authDomain: "simonif-database.firebaseapp.com",
+            databaseURL: "https://simonif-database-default-rtdb.firebaseio.com",
+            projectId: "simonif-database",
+            storageBucket: "simonif-database.firebasestorage.app",
+            messagingSenderId: "916611738795",
+            appId: "1:916611738795:web:c20cc23a6d5b3a29ca9bee",
+            measurementId: "G-ZKVVFSVFMG"
+            };
+        
+        // Inisialisasi Firebase Koneksi
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        // Database Global Sementara Sebelum Diisi Realtime Server
+        let materiDatabase = [];
+        let kuesionerDatabase = [];
+        let rekapRespondenDatabase = [];
+        
+        let currentActiveMenuIndex = 0; 
+        let materiClearedStatus = []; 
+        let countdownInterval = null;
+        let currentSecondsLeft = 0;
+        let isAdminAuthenticated = false;
+        let userBioSubmitted = false;
+        let currentBioData = { name: '', age: '', parity: '', deliveryDate: '', postpartumDay: '' };
+
+        // =========================================================================
+        // SINCRONISASI REAL-TIME DENGAN SERVER GOOGLE FIREBASE
+        // =========================================================================
+        
+        // 1. Ambil Data Materi Secara Live
+        db.ref('materi').on('value', (snapshot) => {
+            materiDatabase = [];
+            snapshot.forEach((child) => {
+                let data = child.val();
+                data.firebaseKey = child.key; // Simpan key untuk kebutuhan hapus
+                materiDatabase.push(data);
+            });
+            if(document.getElementById('view-user-lms').classList.contains('active')) renderUserSidebarMenu();
+            renderAdminListTable();
+        });
+
+        // 2. Ambil Data Kuesioner Secara Live
+        db.ref('kuesioner').on('value', (snapshot) => {
+            kuesionerDatabase = [];
+            snapshot.forEach((child) => {
+                let data = child.val();
+                data.firebaseKey = child.key;
+                kuesionerDatabase.push(data);
+            });
+            renderAdminQuestions();
+        });
+
+        // 3. Ambil Data Rekapitulasi Responden Secara Live
+        db.ref('rekapitulasi').on('value', (snapshot) => {
+            rekapRespondenDatabase = [];
+            snapshot.forEach((child) => {
+                let data = child.val();
+                data.firebaseKey = child.key;
+                rekapRespondenDatabase.push(data);
+            });
+            renderAdminRecapTable();
+        });
+
+        // --- SISTEM NAVIGASI ---
+        function showView(viewId) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-links a').forEach(a => a.classList.remove('active'));
+            if(viewId === 'landing') {
+                document.getElementById('view-landing').classList.add('active');
+                document.getElementById('menu-landing').classList.add('active');
+            } else if(viewId === 'about') {
+                document.getElementById('view-about').classList.add('active');
+                document.getElementById('menu-about').classList.add('active');
+            } else if(viewId === 'user-lms') {
+                document.getElementById('view-user-lms').classList.add('active');
+                init();
+            } else if(viewId === 'admin') {
+                if(!isAdminAuthenticated) { alert("Akses ditolak!"); showView('landing'); return; }
+                document.getElementById('view-admin').classList.add('active');
+                renderAdminListTable(); renderAdminQuestions(); renderAdminRecapTable();
+            }
+        }
+
+        function promptAdminAccess() {
+            let password = prompt("Masukkan Password Admin:");
+            if(password === "admin123") {
+                isAdminAuthenticated = true;
+                document.getElementById('logout-admin-btn').style.display = 'inline-block';
+                showView('admin');
+            } else { alert("Sandi Salah!"); }
+        }
+
+        function logoutAdmin() { isAdminAuthenticated = false; document.getElementById('logout-admin-btn').style.display = 'none'; showView('landing'); }
+        
+        function renderUserSidebarMenu() {
+            const container = document.getElementById('user-sidebar-list'); container.innerHTML = '';
+            materiDatabase.forEach((mod, idx) => {
+                let isCleared = materiClearedStatus[idx] ? '✅' : '📖';
+                let activeClass = (idx === currentActiveMenuIndex) ? 'active' : '';
+                container.innerHTML += `<div class="sidebar-item ${activeClass}" onclick="userNavigateTo(${idx})"><span>${mod.title}</span><span>${isCleared}</span></div>`;
+            });
+            let allMateriRead = materiDatabase.length > 0 && materiClearedStatus.filter(v => v === true).length === materiDatabase.length;
+            let quizMenuIndex = materiDatabase.length;
+            let activeClassQuiz = (currentActiveMenuIndex === quizMenuIndex) ? 'active' : '';
+            let lockedStyle = allMateriRead ? '' : 'locked';
+            container.innerHTML += `<div class="sidebar-item ${activeClassQuiz} ${lockedStyle}" onclick="userNavigateTo(${quizMenuIndex})"><span><b>3. Pengisian Pertanyaan</b></span><span>${allMateriRead ? '📝' : '🔒'}</span></div>`;
+        }
+
+        function userNavigateTo(targetIdx) {
+            if (targetIdx === materiDatabase.length) {
+                let allMateriRead = materiDatabase.length > 0 && materiClearedStatus.filter(v => v === true).length === materiDatabase.length;
+                if (!allMateriRead) { alert("Akses Terkunci! Selesaikan membaca seluruh materi terlebih dahulu."); return; }
+            }
+            currentActiveMenuIndex = targetIdx; renderUserSidebarMenu(); loadActiveMenuContent();
+        }
+
+        function formatMinutesAndSeconds(totalSeconds) {
+            return String(Math.floor(totalSeconds / 60)).padStart(2, '0') + ':' + String(totalSeconds % 60).padStart(2, '0');
+        }
+
+        function loadActiveMenuContent() {
+            if(countdownInterval) clearInterval(countdownInterval);
+            const displayCard = document.getElementById('user-main-content');
+            if(!displayCard) return;
+
+            if (materiDatabase.length === 0 && currentActiveMenuIndex < materiDatabase.length) {
+                displayCard.innerHTML = `<p style="color:var(--text-muted)">Belum ada materi yang diunggah oleh Admin.</p>`;
+                return;
+            }
+
+            if (currentActiveMenuIndex < materiDatabase.length) {
+                let activeMod = materiDatabase[currentActiveMenuIndex];
+                let alreadyCleared = materiClearedStatus[currentActiveMenuIndex] === true;
+                currentSecondsLeft = Math.round(activeMod.duration * 60);
+                displayCard.innerHTML = `
+                    <h2 style="margin-bottom:15px; font-size:20px;">${activeMod.title}</h2>
+                    <div class="timer-alert ${alreadyCleared ? 'unlocked' : ''}" id="timer-banner">
+                        ${alreadyCleared ? '✅ Terverifikasi selesai.' : '⏱️ Batas waktu membaca: <span id="time-left">' + formatMinutesAndSeconds(currentSecondsLeft) + '</span>'}
+                    </div>
+                    <div class="preview-container">${activeMod.type === 'pdf' ? `<iframe src="${activeMod.url}"></iframe>` : `<video src="${activeMod.url}" controls></video>`}</div>
+                    <div style="text-align:right;"><button id="btn-materi-next" class="btn ${alreadyCleared ? 'btn-tosca' : 'btn-locked'}" ${alreadyCleared ? '' : 'disabled'} onclick="goToNextMateriAlur()">Lanjutkan →</button></div>`;
+                if(!alreadyCleared) {
+                    countdownInterval = setInterval(() => {
+                        currentSecondsLeft--;
+                        if(document.getElementById('time-left')) document.getElementById('time-left').innerText = formatMinutesAndSeconds(currentSecondsLeft);
+                        if(currentSecondsLeft <= 0) {
+                            clearInterval(countdownInterval); materiClearedStatus[currentActiveMenuIndex] = true; renderUserSidebarMenu();
+                            if(document.getElementById('timer-banner')) { document.getElementById('timer-banner').className = "timer-alert unlocked"; document.getElementById('timer-banner').innerText = "✅ Selesai! Akses terbuka."; }
+                            if(document.getElementById('btn-materi-next')) { document.getElementById('btn-materi-next').className = "btn btn-tosca"; document.getElementById('btn-materi-next').disabled = false; }
+                        }
+                    }, 1000);
+                }
+            } else {
+                if (!userBioSubmitted) {
+                    displayCard.innerHTML = `
+                        <h2 style="margin-bottom:15px; font-size:20px;">Tahap 1: Formulir Biodata Karakteristik Ibu Nifas</h2>
+                        <form onsubmit="submitBioResponden(event)">
+                            <div class="form-group"><label>Nama Lengkap :</label><input type="text" id="b-name" class="form-control" required></div>
+                            <div class="form-group"><label>Usia (Tahun) :</label><input type="number" id="b-age" class="form-control" style="width:120px;" required></div>
+                            <div class="form-group"><label>Paritas (Jumlah Persalinan) :</label><input type="text" id="b-parity" placeholder="Misal: P1A0" class="form-control" required></div>
+                            <div class="form-group"><label>Tanggal Melahirkan :</label><input type="date" id="b-date" class="form-control" required></div>
+                            <div class="form-group"><label>Nifas Hari Ke :</label><input type="number" id="b-day" class="form-control" style="width:120px;" required></div>
+                            <button type="submit" class="btn btn-tosca" style="margin-top:15px;">Simpan & Buka Kuisioner</button>
+                        </form>`;
+                } else {
+                    let qHtml = '';
+                    kuesionerDatabase.forEach((q, idx) => {
+                        let oHtml = ''; q.options.forEach(o => { oHtml += `<label class="quiz-option"><input type="radio" name="q-ans-${q.id}" value="${o}" required> ${o}</label>`; });
+                        qHtml += `<div style="margin-bottom:20px; border-bottom:1px solid #f3ebeb; padding-bottom:10px;"><p style="font-weight:600; margin-bottom:8px;">${idx+1}. ${q.question}</p>${oHtml}</div>`;
+                    });
+                    displayCard.innerHTML = `<h2>Tahap 2: Lembar Kuisioner Akhir</h2><p style="font-size:12px; margin-bottom:15px; color:var(--text-muted)">Responden Ibu: <b>${currentBioData.name}</b></p><form onsubmit="submitAllAnswers(event)">${qHtml}<button type="submit" class="btn btn-tosca">Kirim Jawaban Kuesioner</button></form>`;
+                }
+            }
+        }
+
+        function goToNextMateriAlur() { if (currentActiveMenuIndex < materiDatabase.length) userNavigateTo(currentActiveMenuIndex + 1); }
+        function submitBioResponden(e) { e.preventDefault(); currentBioData.name = document.getElementById('b-name').value; currentBioData.age = document.getElementById('b-age').value; currentBioData.parity = document.getElementById('b-parity').value; currentBioData.deliveryDate = document.getElementById('b-date').value; currentBioData.postpartumDay = document.getElementById('b-day').value; userBioSubmitted = true; loadActiveMenuContent(); }
+        
+        // Kirim hasil jawaban Kuesioner ke Firebase cloud
+        function submitAllAnswers(e) {
+            e.preventDefault(); let ans = [];
+            kuesionerDatabase.forEach((q, i) => { 
+                let s = document.querySelector(`input[name="q-ans-${q.id}"]:checked`).value; 
+                ans.push(`S${i+1}: ${s} (${s.trim().toLowerCase()===q.key.trim().toLowerCase()?'✅':'❌'})`); 
+            });
+            
+            // Simpan Data Ke Realtime Cloud
+            db.ref('rekapitulasi').push({
+                bio: { ...currentBioData },
+                answers: ans.join(' | ')
+            });
+
+            alert("Hasil rekapitulasi data kuesioner Anda berhasil dikirim ke server cloud SIMONIF!"); 
+            userBioSubmitted = false; materiClearedStatus = []; currentActiveMenuIndex = 0; showView('landing');
+        }
+
+        // --- SISTEM AKSI SUPERADMIN WRITE/DELETE KE CLOUD ---
+        function adminSaveData(e) { 
+            e.preventDefault(); 
+            db.ref('materi').push({
+                id: Date.now(),
+                title: document.getElementById('adm-title').value,
+                type: document.getElementById('adm-type').value,
+                url: document.getElementById('adm-url').value,
+                duration: parseFloat(document.getElementById('adm-duration').value) || 1
+            });
+            document.getElementById('adm-title').value = ''; document.getElementById('adm-url').value = ''; 
+            alert("Materi berhasil disimpan permanen di Cloud!"); 
+        }
+
+        function adminSaveQuestion(e) { 
+            e.preventDefault(); 
+            db.ref('kuesioner').push({
+                id: Date.now(),
+                question: document.getElementById('adm-q-text').value,
+                options: document.getElementById('adm-q-opts').value.split(',').map(o=>o.trim()),
+                key: document.getElementById('adm-q-key').value.trim()
+            });
+            document.getElementById('adm-q-text').value = ''; document.getElementById('adm-q-opts').value = ''; document.getElementById('adm-q-key').value = ''; 
+            alert("Pertanyaan berhasil disimpan permanen di Cloud!"); 
+        }
+
+        function deleteMateri(idx) { 
+            let key = materiDatabase[idx].firebaseKey;
+            if(confirm("Hapus materi ini selamanya dari cloud?")) db.ref('materi/' + key).remove();
+        }
+        function deleteQuestion(idx) { 
+            let key = kuesionerDatabase[idx].firebaseKey;
+            if(confirm("Hapus pertanyaan ini selamanya dari cloud?")) db.ref('kuesioner/' + key).remove();
+        }
+        function deleteResponden(idx) { 
+            let key = rekapRespondenDatabase[idx].firebaseKey;
+            if(confirm("Hapus data rekap responden ini dari cloud?")) db.ref('rekapitulasi/' + key).remove(); 
+        }
+
+        function renderAdminListTable() {
+            const tb = document.getElementById('adm-list-preview'); if(!tb) return; tb.innerHTML = '';
+            materiDatabase.forEach((m, i) => { tb.innerHTML += `<tr><td>${i+1}</td><td><b>${m.title}</b></td><td>${m.type.toUpperCase()}</td><td>${m.duration} Menit</td><td><button class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteMateri(${i})">Hapus</button></td></tr>`; });
+        }
+        function renderAdminQuestions() {
+            const ar = document.getElementById('adm-questions-preview'); if(!ar) return; ar.innerHTML = '';
+            kuesionerDatabase.forEach((q, i) => { ar.innerHTML += `<div style="padding:10px; background:#fafafa; border:1px solid #ddd; margin-bottom:8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center;"><div><b>${i+1}. ${q.question}</b><br><small>Opsi: ${q.options.join(', ')}</small><br><small style="color:var(--primary-color); font-weight:600;">🔑 Kunci: ${q.key}</small></div><button class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteQuestion(${i})">Hapus</button></div>`; });
+        }
+        function renderAdminRecapTable() {
+            const tb = document.getElementById('adm-recap-table-body'); if(!tb) return; tb.innerHTML = '';
+            if(rekapRespondenDatabase.length===0) { tb.innerHTML = `<tr><td colspan="8" style="text-align:center; color:var(--text-muted);">Belum ada data responden terkumpul.</td></tr>`; return; }
+            rekapRespondenDatabase.forEach((d, i) => { tb.innerHTML += `<tr><td>${i+1}</td><td><b>${d.bio.name}</b></td><td>${d.bio.age} Thn</td><td>${d.bio.parity}</td><td>${d.bio.deliveryDate}</td><td>Hari ${d.bio.postpartumDay}</td><td style="font-size:12px;">${d.answers}</td><td><button class="btn btn-danger" style="padding:4px 8px; font-size:12px;" onclick="deleteResponden(${i})">Hapus</button></td></tr>`; });
+        }
+        
+        function init() { renderUserSidebarMenu(); loadActiveMenuContent(); }
+
+        // BROWSER PROTECTIONS
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey && (e.key === 'c' || e.key === 'x' || e.key === 'u' || e.key === 's')) { e.preventDefault(); return false; }
+            if (e.key === 'F12') { e.preventDefault(); return false; }
+        });
+        const styleSel = document.createElement('style'); styleSel.innerHTML = `body { -webkit-user-select: none; user-select: none; } input { user-select: text; }`; document.head.appendChild(styleSel);
+    </script>
+</body>
+</html>
