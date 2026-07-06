@@ -344,7 +344,7 @@
             return String(Math.floor(totalSeconds / 60)).padStart(2, '0') + ':' + String(totalSeconds % 60).padStart(2, '0');
         }
 
-        function loadActiveMenuContent() {
+       function loadActiveMenuContent() {
             if(countdownInterval) clearInterval(countdownInterval);
             const displayCard = document.getElementById('user-main-content');
             if(!displayCard) return;
@@ -358,21 +358,45 @@
                 let activeMod = materiDatabase[currentActiveMenuIndex];
                 let alreadyCleared = materiClearedStatus[currentActiveMenuIndex] === true;
                 currentSecondsLeft = Math.round(activeMod.duration * 60);
+                
+                // 1. Render kerangka tampilan utama materi & media (hanya sekali di awal muat)
                 displayCard.innerHTML = `
                     <h2 style="margin-bottom:15px; font-size:20px;">${activeMod.title}</h2>
                     <div class="timer-alert ${alreadyCleared ? 'unlocked' : ''}" id="timer-banner">
                         ${alreadyCleared ? '✅ Terverifikasi selesai.' : '⏱️ Batas waktu membaca: <span id="time-left">' + formatMinutesAndSeconds(currentSecondsLeft) + '</span>'}
                     </div>
-                    <div class="preview-container">${activeMod.type === 'pdf' ? `<iframe src="${activeMod.url}"></iframe>` : `<video src="${activeMod.url}" controls></video>`}</div>
-                    <div style="text-align:right;"><button id="btn-materi-next" class="btn ${alreadyCleared ? 'btn-tosca' : 'btn-locked'}" ${alreadyCleared ? '' : 'disabled'} onclick="goToNextMateriAlur()">Lanjutkan →</button></div>`;
+                    <div class="preview-container">
+                        <iframe src="${activeMod.url}" allow="autoplay"></iframe>
+                    </div>
+                    <div style="text-align:right;">
+                        <button id="btn-materi-next" class="btn ${alreadyCleared ? 'btn-tosca' : 'btn-locked'}" ${alreadyCleared ? '' : 'disabled'} onclick="goToNextMateriAlur()">Lanjutkan →</button>
+                    </div>`;
+                
+                // 2. Jalankan hitung mundur tanpa merusak/me-refresh elemen media iframe di atas
                 if(!alreadyCleared) {
                     countdownInterval = setInterval(() => {
                         currentSecondsLeft--;
-                        if(document.getElementById('time-left')) document.getElementById('time-left').innerText = formatMinutesAndSeconds(currentSecondsLeft);
+                        
+                        // Hanya perbarui teks angka timernya saja agar video tidak reload
+                        const timeLeftSpan = document.getElementById('time-left');
+                        if(timeLeftSpan) {
+                            timeLeftSpan.innerText = formatMinutesAndSeconds(currentSecondsLeft);
+                        }
+                        
+                        // Ketika waktu habis, buka kunci tombol materi selanjutnya
                         if(currentSecondsLeft <= 0) {
-                            clearInterval(countdownInterval); materiClearedStatus[currentActiveMenuIndex] = true; renderUserSidebarMenu();
-                            if(document.getElementById('timer-banner')) { document.getElementById('timer-banner').className = "timer-alert unlocked"; document.getElementById('timer-banner').innerText = "✅ Selesai! Akses terbuka."; }
-                            if(document.getElementById('btn-materi-next')) { document.getElementById('btn-materi-next').className = "btn btn-tosca"; document.getElementById('btn-materi-next').disabled = false; }
+                            clearInterval(countdownInterval); 
+                            materiClearedStatus[currentActiveMenuIndex] = true; 
+                            renderUserSidebarMenu();
+                            
+                            if(document.getElementById('timer-banner')) { 
+                                document.getElementById('timer-banner').className = "timer-alert unlocked"; 
+                                document.getElementById('timer-banner').innerText = "✅ Selesai! Akses terbuka."; 
+                            }
+                            if(document.getElementById('btn-materi-next')) { 
+                                document.getElementById('btn-materi-next').className = "btn btn-tosca"; 
+                                document.getElementById('btn-materi-next').disabled = false; 
+                            }
                         }
                     }, 1000);
                 }
