@@ -114,7 +114,7 @@
         <div class="nav-links">
             <a id="menu-landing" class="active" onclick="showView('landing')">Beranda</a>
             <a id="menu-about" onclick="showView('about')">Tentang</a>
-            <a onclick="alert('Hubungi tim pusat SIMONIF melalui email: admin@simonif.id')">Kontak</a>
+            <a id="menu-contact" onclick="showView('contact')">Kontak</a>
             <button class="btn" style="background:#e2e8f0; display:none; padding: 4px 10px; font-size:12px;" id="logout-admin-btn" onclick="logoutAdmin()">Keluar Admin</button>
         </div>
     </nav>
@@ -165,6 +165,21 @@
             </div>
         </div>
 
+        <div id="view-contact" class="view-section">
+            <div class="about-header"><h1>Kontak SIMONIF</h1></div>
+            <div class="about-text-block">
+            <h3 class="team-section-title">✨ Hubungi Kami</h3>
+            <div style="display: flex; flex-direction: column; gap: 40px; max-width: 1000px; margin: 0 auto 60px auto;">
+                <div style="display: flex; justify-content: center;">
+                    <div class="team-card" style="width: 240px;">
+                        <div class="avatar-frame"><img src="https://i.pinimg.com/474x/13/74/20/137420f5b9c39bc911e472f5d20f053e.jpg?nii=t" alt="Pembimbing"></div>
+                        <div class="member-name">Feby Shanti Dewanti</div><span class="member-role">Pengelola</span>
+                    </div>
+                </div>
+            </div>
+            </div>
+        </div>
+        
         <div id="view-user-lms" class="view-section">
             <div class="lms-layout">
                 <div class="sidebar">
@@ -297,6 +312,9 @@
             } else if(viewId === 'about') {
                 document.getElementById('view-about').classList.add('active');
                 document.getElementById('menu-about').classList.add('active');
+            } else if(viewId === 'contact') {
+                document.getElementById('view-contact').classList.add('active');
+                document.getElementById('menu-contact').classList.add('active');
             } else if(viewId === 'user-lms') {
                 document.getElementById('view-user-lms').classList.add('active');
                 init();
